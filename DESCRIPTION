@@ -1,0 +1,40 @@
+Package: tsrobprep
+Title: Robust Preprocessing of Time Series Data
+Version: 0.0.0.1
+Date: 2020-08-17
+Authors@R: c(
+    person(given = "Michał",
+           family = "Narajewski",
+           role = c("aut", "cre"),
+           email = "michal.narajewski@uni-due.de",
+           comment = c(ORCID = "https://orcid.org/0000-0002-3115-0162")),
+    person(given = "Florian",
+           family = "Ziel",
+           role = "aut",
+           email = "florian.ziel@uni-due.de",
+           comment = c(ORCID = "https://orcid.org/0000-0002-2974-2660")),
+    person(given = "Jens",
+           family = "Kley-Holsteg",
+           role = "ctb",
+           email = "jens.kley-holsteg@hs-ruhrwest.de"))
+Description: Methods for handling the missing values outliers are introduced in
+    this package. The recognized missing values and outliers are replaced 
+    using a model-based approach. The model may consist of both autoregressive
+    components and external regressors. The methods work robust and efficient,
+    and they are fully tunable. The primary motivation for writing the package
+    was preprocessing of the energy systems data, e.g. power plant production
+    time series, but the package could be used with any time series data.
+Depends: R (>= 3.2.0)
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports: Matrix, quantreg
+LazyData: true
+RoxygenNote: 7.1.1
+NeedsCompilation: no
+Packaged: 2020-09-04 07:55:24 UTC; michal
+Author: Michał Narajewski [aut, cre] (<https://orcid.org/0000-0002-3115-0162>),
+  Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>),
+  Jens Kley-Holsteg [ctb]
+Maintainer: Michał Narajewski <michal.narajewski@uni-due.de>
+Repository: CRAN
+Date/Publication: 2020-09-11 09:20:03 UTC
