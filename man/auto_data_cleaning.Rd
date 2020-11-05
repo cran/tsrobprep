@@ -4,7 +4,28 @@
 \alias{auto_data_cleaning}
 \title{Perform automatic data cleaning of time series data}
 \usage{
-auto_data_cleaning(data, tau = 0.5, S, extreg = NULL, ...)
+auto_data_cleaning(
+  data,
+  tau = 0.5,
+  S,
+  extreg = NULL,
+  no.of.last.indices.to.fix = S,
+  indices.to.fix = NULL,
+  outlier.lower.cap = 2 * log(dim(as.matrix(data))[1]),
+  outlier.upper.cap = log(dim(as.matrix(data))[1]),
+  margin = outlier.upper.cap,
+  max.periods.to.smooth = 48,
+  lags = c(1, 2, S, S + 1, 7 * S, 7 * S + 1, -1, -2, -S, -S - 1, -7 * S, -7 * S - 1),
+  n.best.extreg = NULL,
+  use.data.as.ext = FALSE,
+  lag.externals = FALSE,
+  consider.as.missing = NULL,
+  whole.period.missing.only = FALSE,
+  min.val = -Inf,
+  max.val = Inf,
+  digits = 3,
+  ...
+)
 }
 \arguments{
 \item{data}{an input vector, matrix or data frame of dimension nobs x nvars
@@ -16,10 +37,65 @@ quantile regression. Tau accepts all values in (0,1), the default is 0.5.}
 \item{S}{a number of observations per period, e.g. per day.}
 
 \item{extreg}{a vector, matrix or data frame of data containing external
-regressors.}
+regressors; each column is a variable.}
 
-\item{...}{additional arguments for the \link[tsrobprep]{model_missing_data}
-and \link[tsrobprep]{handle_outliers} functions.}
+\item{no.of.last.indices.to.fix}{a number of observations in the tail of
+the data to be fixed, by default set to S.}
+
+\item{indices.to.fix}{indices of the data to be fixed. If NULL, then it is
+calculated based on the no.of.last.indices.to.fix parameter. Otherwise, the
+no.of.last.indices.to.fix parameter is ignored.}
+
+\item{outlier.lower.cap}{a number of observations that should fall above
+(below) the outlier lower cap, used for the calculation of the interquantile
+range. By default set to 2log(nobs).}
+
+\item{outlier.upper.cap}{a number of observations that should fall above
+(below) the outlier upper cap, used for the calculation of the interquantile
+range. By default set to log(nobs).}
+
+\item{margin}{a value that indicates the number of interquantile ranges
+above (below) the quantile upper cap that is still considered not to be an
+outlier. By default equals outlier.upper.cap.}
+
+\item{max.periods.to.smooth}{maximum number of S periods to be smoothed in
+the detection of outliers in the differential series. By default set to 48.}
+
+\item{lags}{a numeric vector with the lags to use in the autoregression.
+Negative values are accepted and then also the "future" observations are
+used for modelling. The default values are constructed under the assumption
+that S describes daily periodicity.}
+
+\item{n.best.extreg}{a numeric value specifying the maximal number of considered
+best correlated external regressors (selected in decreasing order). If NULL,
+then all variables in extreg are used for modelling.}
+
+\item{use.data.as.ext}{logical specifying whether to use the remaining
+variables in the data as external regressors or not.}
+
+\item{lag.externals}{logical specifying whether to lag the external
+regressors or not. If TRUE, then the algorithm uses the lags specified in
+parameter lags.}
+
+\item{consider.as.missing}{a vector of numerical values which are considered
+as missing in the data.}
+
+\item{whole.period.missing.only}{if FALSE, then all observations which correspond to
+the values of consider.as.missing are treated as missings. If TRUE, then only
+consecutive observations of specified length are considered (length is defined by S).}
+
+\item{min.val}{a single value or a vector of length nvars providing the
+minimum possible value of each variable in the data. If a single value, then
+it applies to all variables. By default set to -Inf.}
+
+\item{max.val}{a single value or a vector of length nvars providing the
+maximum possible value of each variable in the data. If a single value, then
+it applies to all variables. By default set to Inf.}
+
+\item{digits}{integer indicating the number of decimal places allowed
+in the data, by default set to 3.}
+
+\item{...}{additional arguments for the \link[quantreg]{rq.fit.fnb} algorithm.}
 }
 \value{
 A matrix or a list of matrices with imputed missing values or
@@ -33,9 +109,9 @@ outliers. The function automatizes the usage of functions
 data only.
 }
 \details{
-The function calls \link[tsrobprep]{model_missing_data} and
-\link[tsrobprep]{handle_outliers} functions simultaneously and combines the
-results. For details see the functions' respective help sections.
+The function calls \link[tsrobprep]{handle_outliers} to detect outliers,
+removes them and applies \link[tsrobprep]{model_missing_data} function.
+For details see the functions' respective help sections.
 }
 \examples{
 autoclean <- auto_data_cleaning(data = GBload[,-1], S = 48, tau = 0.5,

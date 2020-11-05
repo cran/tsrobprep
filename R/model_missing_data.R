@@ -225,8 +225,8 @@ model_missing_data <- function(data, tau = 0.5, S, no.of.last.indices.to.fix = S
                                       silent = TRUE)
             while(class(models[[test.str]]) == "try-error"){
               error_type <- attr(models[[test.str]],"condition")
-              if(error_type$message!= "Error info =  1 in stepy: singular design") stop(error_type)
-              warning("singular design in regression matrix")
+              if(! grepl(pattern = "singular design", x = error_type$message)) stop(error_type)
+              warning("To avoid singular matrix design in regression matrix relevant regressors were removed")
               if(length(cols.to.remove[[test.str]])==0){
                 cols.to.remove[[test.str]] <- c(cols.to.remove[[test.str]],
                                                 which.max(rowSums((abs(svd(df.learn[,test])$v) < .Machine$double.eps) + 0)))
@@ -236,10 +236,7 @@ model_missing_data <- function(data, tau = 0.5, S, no.of.last.indices.to.fix = S
               models[[test.str]] <- try({quantreg::rq.fit.fnb(x = as.matrix(df.learn[,test][, -cumsum(cols.to.remove[[test.str]])]),
                                                                    y = df.learn[,1], tau = tau[tau.no], ...)$coefficients}, silent = TRUE)
             }
-            #models[[test.str]] <- quantreg::rq.fit.fnb(x = as.matrix(df.learn[,test]), y = df.learn[,1], tau = tau[tau.no], ...)$coefficients
-            #models[[test.str]] <- quantreg::rq.fit.fnb(x = as.matrix(df.learn[,test]), y = df.learn[,1], tau = tau[tau.no])$coefficients
           }
-          #if(is.null(models[[test.str]])) models[[test.str]] <- quantreg::rq.fit.fnb(x = as.matrix(df.orig[,test]), y = df.learn[,1], tau = tau[tau.no])$coefficients
           if(length(cols.to.remove[[test.str]])==0){
             val <- round(pmin(pmax(as.numeric(test.data[test] %*% models[[test.str]]),min.val),max.val), digits)
           } else

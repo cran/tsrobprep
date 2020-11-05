@@ -1,7 +1,7 @@
 Package: tsrobprep
 Title: Robust Preprocessing of Time Series Data
-Version: 0.0.0.1
-Date: 2020-08-17
+Version: 0.0.0.2
+Date: 2020-11-05
 Authors@R: c(
     person(given = "Michał",
            family = "Narajewski",
@@ -31,10 +31,10 @@ Imports: Matrix, quantreg
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2020-09-04 07:55:24 UTC; michal
+Packaged: 2020-11-05 10:23:29 UTC; michal
 Author: Michał Narajewski [aut, cre] (<https://orcid.org/0000-0002-3115-0162>),
   Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>),
   Jens Kley-Holsteg [ctb]
 Maintainer: Michał Narajewski <michal.narajewski@uni-due.de>
 Repository: CRAN
-Date/Publication: 2020-09-11 09:20:03 UTC
+Date/Publication: 2020-11-05 10:40:02 UTC
