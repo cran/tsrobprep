@@ -6,11 +6,13 @@
 \usage{
 model_missing_data(
   data,
-  tau = 0.5,
   S,
-  no.of.last.indices.to.fix = S,
+  tau = 0.5,
+  no.of.last.indices.to.fix = S[1],
   indices.to.fix = NULL,
-  lags = c(1, 2, S, S + 1, 7 * S, 7 * S + 1, -1, -2, -S, -S - 1, -7 * S, -7 * S - 1),
+  p = NULL,
+  mirror = FALSE,
+  lags = NULL,
   extreg = NULL,
   n.best.extreg = NULL,
   use.data.as.ext = FALSE,
@@ -19,6 +21,7 @@ model_missing_data(
   whole.period.missing.only = FALSE,
   min.val = -Inf,
   max.val = Inf,
+  Cor_thres = 0.5,
   digits = 3,
   ...
 )
@@ -27,10 +30,12 @@ model_missing_data(
 \item{data}{an input vector, matrix or data frame of dimension nobs x nvars
 containing missing values; each column is a variable.}
 
+\item{S}{a number or vector describing the seasonalities (S_1, ..., S_K) in the data,
+e.g. c(24, 168) if the data consists of 24 observations per day and there is
+a weekly seasonality in the data.}
+
 \item{tau}{the quantile(s) of the missing values to be estimated in the
 quantile regression. Tau accepts all values in (0,1), the default is 0.5.}
-
-\item{S}{a number of observations per period, e.g. per day.}
 
 \item{no.of.last.indices.to.fix}{a number of observations in the tail of
 the data to be fixed, by default set to S.}
@@ -39,10 +44,15 @@ the data to be fixed, by default set to S.}
 calculated based on the no.of.last.indices.to.fix parameter. Otherwise, the
 no.of.last.indices.to.fix parameter is ignored.}
 
+\item{p}{a number or vector of length(S) = K indicating the order of a K-seasonal
+autoregressive process to be estimated. If NULL, chosen data-based.}
+
+\item{mirror}{if TRUE then autoregressive lags up to order p are not only added
+to the seasonalities but also subtracted.}
+
 \item{lags}{a numeric vector with the lags to use in the autoregression.
 Negative values are accepted and then also the "future" observations are
-used for modelling. The default values are constructed under the assumption
-that S describes daily periodicity.}
+used for modelling. If not NULL, p and mirror are ignored.}
 
 \item{extreg}{a vector, matrix or data frame of data containing external
 regressors; each column is a variable.}
@@ -73,6 +83,9 @@ it applies to all variables. By default set to -Inf.}
 maximum possible value of each variable in the data. If a single value, then
 it applies to all variables. By default set to Inf.}
 
+\item{Cor_thres}{a single value providing the correlation threshold from which external
+regressors are considered in the quantile regression.}
+
 \item{digits}{integer indicating the number of decimal places allowed
 in the data, by default set to 3.}
 
@@ -101,7 +114,7 @@ algorithm for user-specified quantile values. The modelled values can be
 imputed using \link[tsrobprep]{impute_modelled_data} function.
 }
 \examples{
-model.miss <- model_missing_data(data = GBload[,-1], S = 48, tau = 0.5,
+model.miss <- model_missing_data(data = GBload[,-1], S = c(48,7*48), tau = 0.5,
               no.of.last.indices.to.fix = dim(GBload)[1], consider.as.missing = 0,
               min.val = 0)
 model.miss$estimated.models
@@ -109,6 +122,6 @@ model.miss$replaced.indices
 new.GBload <- impute_modelled_data(model.miss)
 }
 \seealso{
-\link[tsrobprep]{impute_modelled_data}, \link[tsrobprep]{handle_outliers},
+\link[tsrobprep]{impute_modelled_data}, \link[tsrobprep]{detect_outliers},
 \link[tsrobprep]{auto_data_cleaning}
 }

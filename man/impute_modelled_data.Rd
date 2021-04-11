@@ -7,8 +7,8 @@
 impute_modelled_data(object, tau = NULL)
 }
 \arguments{
-\item{object}{an object of class "tsrobprep" that is an output of functions
-model_missing_data and handle_outliers.}
+\item{object}{an object of class "tsrobprep" that is an output of function
+model_missing_data.}
 
 \item{tau}{the quantile(s) of the missing values to be imputed. tau should be
 a subset of the quantile values present in the "tsrobprep" object. By default
@@ -24,7 +24,7 @@ outliers. As argument the function requires an object of class "tsrobprep"
 and the quantiles to be imputed.
 }
 \examples{
-model.miss <- model_missing_data(data = GBload[,-1], S = 48, tau = 0.5,
+model.miss <- model_missing_data(data = GBload[,-1], S = c(48,7*48), tau = 0.5,
               no.of.last.indices.to.fix = dim(GBload)[1], consider.as.missing = 0,
               min.val = 0)
 model.miss$estimated.models
@@ -32,6 +32,6 @@ model.miss$replaced.indices
 new.GBload <- impute_modelled_data(model.miss)
 }
 \seealso{
-\link[tsrobprep]{model_missing_data}, \link[tsrobprep]{handle_outliers},
+\link[tsrobprep]{model_missing_data}, \link[tsrobprep]{detect_outliers},
 \link[tsrobprep]{auto_data_cleaning}
 }

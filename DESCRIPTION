@@ -1,7 +1,7 @@
 Package: tsrobprep
 Title: Robust Preprocessing of Time Series Data
-Version: 0.0.0.2
-Date: 2020-11-05
+Version: 0.1.0
+Date: 2021-04-11
 Authors@R: c(
     person(given = "Michał",
            family = "Narajewski",
@@ -27,14 +27,14 @@ Description: Methods for handling the missing values outliers are introduced in
 Depends: R (>= 3.2.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: Matrix, quantreg
+Imports: Matrix, quantreg, mclust, MASS
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2020-11-05 10:23:29 UTC; michal
+Packaged: 2021-04-11 13:46:48 UTC; michal
 Author: Michał Narajewski [aut, cre] (<https://orcid.org/0000-0002-3115-0162>),
   Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>),
   Jens Kley-Holsteg [ctb]
 Maintainer: Michał Narajewski <michal.narajewski@uni-due.de>
 Repository: CRAN
-Date/Publication: 2020-11-05 10:40:02 UTC
+Date/Publication: 2021-04-11 14:00:02 UTC
