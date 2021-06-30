@@ -1,170 +1,207 @@
-#' Detects unreliable outliers in univariate time series data based on finite
-#' mixture modelling
+#' Detects unreliable outliers in univariate time series data based on
+#' model-based clustering
 #'
 #' @description This function applies finite mixture modelling to compute
-#' the probability of each observation being an outlier
+#' the probability of each observation being outliying data
 #' in an univariate time series.
 #' By utilizing the \link[mclust]{Mclust} package the data is
-#' assigned in k clusters whereof one contains outliers.
-#' The clustering process is based on features, which are
-#' specifically desinged for outlier detection in time series data.
+#' assigned in G clusters whereof one is modelled as an outlier cluster.
+#' The clustering process is based on features, which are modelled to
+#' differentiate normal from outlying observation.Beside computing
+#' the probability of each observation being outlying data also
+#' the specific cause in terms of the responsible feature/ feature combination
+#' can be provided.
 #' @param data an one dimensional matrix or data frame without missing data;
 #' each row is an observation.
 #' @param S vector with numeric values for each seasonality present in data.
-#' @param feat.int a list of logical values indicating which features should
-#' be applied in clustering algorithm.
-#' \describe{
-#'   \item{org.s}{denotes the scaled original time series.}
-#'   \item{lin.tr}{denotes linear trends based on seasonalities S.}
-#'   \item{grad}{denotes the gradient of scaled original time series.}
-#'   \item{abs.grad}{denotes absolute gradient of
-#'    scaled original time series.}
-#'   \item{abs.seas.grad}{denotes the absolute seasonal gradient of
-#'   scaled original time series based on seasonalties S.}
-#'}
-#' @param model.select.iter denotes the number of
-#' iterations to find the optimal number of clusters as well as
-#' the optimal model of the covariance matrix.
-#' By default set to 10. Results become more robust
-#' with increasing iterations but lead
-#' likewise to increasing computational time.
-#' @param outlier.detect.iter denotes the number of iterations
-#' for outlier detection based on variing subsamples
-#' controlled by the share parameter. By default set to 10.
-#' Results become more robust with increasing iterations but lead
-#' likewise to increasing computational time.
-#' @param proba denotes threshold ranging from 0 to 1 from which an
-#' observation is considered being an outlier. Number of outlier increases
-#' with decreasing threshold. By default set to 0.1, implying that in average
-#' an observation obtains a probability in each iteration of 0.1 belonging to
-#' the outlier cluster.
+#' @param repetitions denotes the number of
+#' repetitions to repeat the clustering.
+#' By default set to 10. Allows to control the robustness and computational time
+#' of the method.
+#' @param proba denotes the threshold from which on an observation is considered
+#' as being outlying data. By default is set to 0.5 (ranging from 0 to 1). Number of
+#' outliers increases with decrease of proba threshold.
 #' @param share controlls the size of the subsample used for estimation.
-#' By default set to 0.3 (ranging from 0 to 1). Controlls the computational time
-#' and the robustness of the method.
+#' By default set to pmin(2*round(length(data)^(sqrt(2)/2)),
+#' length(data))/length(data) (ranging from 0 to 1).
+#' In combination with the repetitions parameter the
+#' robustness and computational time of the method can be controlled.
+#' @param decomp allows to perform seasonal decomposition on the original time series as pre-
+#' processing step before feature modelling. By default set to TRUE.
+#' @param PComp allows to use the principal components of the modelled feature matrix.
+#' By default set to FALSE.
+#' @param feat.inf logical value indicating whether influential features/ feature combinations
+#' should be computed. By default set to FALSE.
+#' @param out.par controls the number of artifially produced outliers to allow cluster
+#' formation of oultier cluster. By default out.par ist set to 2. By increase it is assumed that
+#' share of outliers in data increases. A priori it is assumed that
+#' out.par * ceiling(sqrt(nrow(data.original))) number of observations are outlying observations.
 #' @param detection.parameter denotes a parameter to regulate the
-#' detection sensisitivity. By default set to 1. The smaller the more outliers.
-#' @param out.par controls the number of artifially produced outliers in
-#' relation to the subsample size controlled by the share parameter. By default
-#' out.par ist set to 2. By increase a priori it is assumed that
-#' share of outliers in data increases.
-#' @param noise.par controls strenght of noise added to feature matrix to avoid
-#' zero variance issues by applying bivariate features. By default set to 10^-5,
-#' strength of noise decreases with decreasing noise.par parameter.
-#' @param mar denotes a margin controlling the number of adjacent
-#' values around an identified outlier which are likewise considered
-#' as outliers. By default set to 1 so that the one most closest neighbours
-#' of an identified outlier on each side are also treated as outliers.
+#' detection sensitivity. By default set to 1. It is assumed that the outlier cluster
+#' follows a (multivariate) Gaussian distribution parameterized by sample mean and a blown up
+#' sample covariance matrix of the feature space. The covariance matrix is blown up
+#' by detection.parameter * (2 * log(length(data)))^2.
+#' By increase the more extrem outliers are detected.
 #' @param max.cluster a single numeric value controlling the maximum
-#' number of clusters allowed. By default set to 9.
+#' number of allowed clusters. By default set to 9.
 #' @param G denotes the optimal number of clusters limited by the
-#' max.cluster paramter. By default G is set to NULL and automatically
+#' max.cluster paramter. By default G is set to NULL and is automatically
 #' calculated based on the BIC.
 #' @param modelName denotes the geometric features of the covariance matrix.
 #' i.e. "EII", "VII", "EEI", "EVI", "VEI", "VVI", etc.. By default modelName
-#' is set to NUll and automatically calcualted based on BIC.
-#' The help file for \link[mclust]{mclustModelNames} describes
-#' the available models.
+#' is set to "VVV". The help file for \link[mclust]{mclustModelNames} describes
+#' the available models. Choice of modelName influences the fit to the data as well as
+#' the computational time.
 #' @param ... additional arguments for the \link[mclust]{Mclust} function.
 #' @details The detection of outliers is addressed by
 #' model based clustering based on parameterized finite Gaussian mixture models.
 #' For cluster estimation the \link[mclust]{Mclust} function is applied.
 #' Models are estimated by the EM algorithm initialized by hierarchical
-#' model-based agglomerative clustering. The optimal model can be selected
+#' model-based agglomerative clustering. The optimal model is selected
 #' according to BIC.
-#' @return An object of class "tsrobprep" containing the following elements:
+#' The following features based on the introduced data are used in the clustering process:
 #' \describe{
-#' \item{original.data}{an numeric vector containing the original data.}
-#' \item{outlier.probs}{an numeric vector containing the averaged probability}
-#' \item{outlier.probs.mat}{a matrix containg the probability for each iteration
-#' that observation is belonging to the outlier cluster.
-#' Each row is an observation and each column an iteration.}
+#'   \item{org.series}{denotes the scaled and potantially decomposed original time series.}
+#'   \item{seasonality}{denotes determenistic seasonalities based on S.}
+#'   \item{gradient}{denotes the summation of the two sided gradient of the org.series.}
+#'   \item{abs.gradient}{denotes the summation of the absolute two sided gradient of
+#'    org.series.}
+#'   \item{rel.gradient}{denotes the summation of the two sided absolute gradient of the
+#'   org.series with sign based on left sided gradient in relation to the
+#'   rolling mean absolut deviation based on most relevant seasonality S.}
+#'   \item{abs.seas.grad}{denotes the summation of the absolute two sided seasonal gradient of
+#'   org.series based on seasonalties S.}
+#'  }
+#' In case PComp = TRUE, the features correspond to the principal components of the
+#' introduced feature space.
+#' @return a list containing the following elements:
+#' \item{data}{numeric vector containing the original data.}
 #' \item{outlier.pos}{a logical vector indicating the position of each outlier.}
-#' \item{outlier.pos.aug}{a logical vector indicating the position of
-#' each outlier including neigbouring values based on the mar parameter.}
-#' \item{estimated.models}{a list containing each estimated model.}
-#' \item{BIC}{an mclustBIC object containing the
-#' Bayesian Information Criterion for the specified mixture models numbers of
-#' clusters. Auxiliary information returned as attributes.}
+#' \item{outlier.probs}{a vector containing all probabilities for each observation
+#' being outlying data.}
+#' \item{Repetitions}{provides a list for each repetition containing the estimated model,
+#' the outlier cluster, the probabilities for each observation belonging to the estimated
+#' clusters, the outlier position, the influence of each feature/ feature combination
+#' on the identified outyling data, and the corresponding probabilities
+#' after shift to the feature mean of each considered outlier, as well as the applied
+#' subset of the extended feature matrix for estimation (including artificially introduced
+#' outliers).
 #' }
+#' \item{features}{a matrix containg the feature matrix. Each column is a feature.}
+#' \item{inf.feature.combinations}{a list containg the features/ feature comibinations,
+#' which caused assignment to outlier cluster.}
+#' \item{feature.inf.tab}{a matrix containing all possible feature combinations.}
+#' \item{PC}{an object of class "princomp" containing the principal component analysis
+#' of the feature matrix.}
 #' @examples
 #' \dontrun{
-#' set.seed(1)
-#' id <- 14000:17000
-#' # Replace missing values
-#' modelmd <- model_missing_data(data = GBload[id, -1], tau = 0.5,
-#'  S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
-#'  consider.as.missing = 0, min.val = 0)
-#' # Impute missing values
-#'  data.imputed <- impute_modelled_data(modelmd)
-#' # Detect outliers
-#' o.ident <- detect_outliers(data = data.imputed, S = c(48, 336),
-#'                            model.select.iter = 1,
-#'                            outlier.detect.iter = 1)
-#' # Plot of identified outliers in time series
-#' plot(data.imputed, type = "o", col=1 + o.ident$outlier.pos.aug,
-#'      pch = 1 + 18 * o.ident$outlier.probs)
+#'set.seed(1)
+#'id <- 14000:17000
+#'# Replace missing values
+#'modelmd <- model_missing_data(data = GBload[id, -1], tau = 0.5,
+#'                              S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
+#'                              consider.as.missing = 0, min.val = 0)
+#'# Impute missing values
+#'data.imputed <- impute_modelled_data(modelmd)
 #'
-#' # Plot of feature matrix
-#' plot.ts(o.ident$features, type = "o",
-#'         col = 1 + o.ident$outlier.pos,
-#'         pch = 1 + 18 * o.ident$outlier.probs)
+#'#Detect outliers
+#'system.time(
+#'  o.ident <- detect_outliers(data = data.imputed, S = c(48, 336))
+#')
+#'
+#'# Plot of identified outliers in time series
+#'outlier.vector <- rep(F,length(data.imputed))
+#'outlier.vector[o.ident$outlier.pos] <- T
+#'plot(data.imputed, type = "o", col=1 + outlier.vector,
+#'     pch = 1 + 18 * outlier.vector)
+#'
+#'# table of identified outliers and corresponding probs being outlying data
+#'df <- data.frame(o.ident$outlier.pos,unlist(o.ident$outlier.probs)[o.ident$outlier.pos])
+#'colnames(df) <- c("Outlier position", "Probability of being outlying data")
+#'df
+#'
+#'# Plot of feature matrix
+#'plot.ts(o.ident$features, type = "o",
+#'        col = 1 + outlier.vector,
+#'        pch = 1 + 1 * outlier.vector)
+#'
 #' }
 #' @export
-#' @seealso \link[tsrobprep]{model_missing_data},
+#' @seealso \code{\link[tsrobprep]{model_missing_data}},
 #' \link[tsrobprep]{impute_modelled_data},
 #' \link[tsrobprep]{auto_data_cleaning}
 #' @importFrom mclust mclustBIC
 #'
+# detect outliers function - modified
 detect_outliers <- function(data,
                             S,
-                            model.select.iter = 10,
-                            outlier.detect.iter = 10,
-                            proba = 0.1,
-                            share = 0.3,
+                            proba = 0.5,
+                            share = NULL,
+                            repetitions = 10,
+                            decomp = T,
+                            PComp = F,
                             detection.parameter = 1,
                             out.par = 2,
-                            noise.par = 10^-5,
-                            mar = 1,
                             max.cluster = 9,
                             G = NULL,
-                            modelName = NULL,
-                            feat.int = list(org.s = TRUE,
-                                            grad = TRUE,
-                                            abs.grad = TRUE,
-                                            abs.seas.grad  = TRUE,
-                                            lin.tr = TRUE),
+                            modelName = "VVV",
+                            feat.inf = F,
                             ...) {
-  data.original <- as.matrix(data) # matrix format
+  # transform data into matrix format
+  data.original <- as.matrix(data)
 
-  ###validate the variables' correctness - basic validation
-  if (dim(data.original)[1] == 0) {
-    stop("Provided data is of length 0.")
-  } else nobs <- dim(data.original)[1]
-  if (length(S) == 0 | any(sapply(S, function(x) x %% 1 == 0) == FALSE))
-    stop("No or incorrect seasonalities provided")
-  if (!is.numeric(model.select.iter)) stop("Provided runs are not numeric.")
-  if (!is.numeric(outlier.detect.iter)) stop("Provided runs are not numeric.")
-  if (!is.numeric(proba) | proba > 1 | proba < 0)
-    stop("Provided probability is incorrect.")
-  if (!is.numeric(detection.parameter))
-    stop("Provided detection.parameter is incorrect.")
-  if (!is.null(G) & !is.numeric(G)) stop("Provide numeric value.")
-  if (!is.null(modelName) & !is.character(modelName))
-    stop("Provided modelName is incorrect.")
-  if (!is.numeric(out.par)) stop("Provided out.par is not numeric.")
-  if (!is.numeric(noise.par)) stop("Provided out.par is not numeric.")
-  if (!is.null(G) & !is.null(modelName)) model.select.iter <- 0
-  if (sum(is.na(data.original) > 0)) stop("Remove missing values.")
-  if ((! TRUE %in% feat.int)) stop("No features provided.")
-  ## Feature engineering
+  # validate the variables' correctness - basic validation
+  if(sum(is.na(data.original)) != 0) stop("Please impute missing data before usage.")
+  if(is.null(share)) share<- pmin(2*round(length(data.original)^(sqrt(2)/2)),
+                                  length(data.original))/length(data.original)
+  if(is.null(G)){ # Create grid for search of clusters
+    phi<- (sqrt(5)+1)/2
+    G<- round((phi^(2+1:log(max.cluster-1, phi)))/sqrt(5) )
+  }
+
+  ## TODO Disable seasonal features if data is too short
+  if(sum(nrow(data.original) <= S) < length(S))  S <- S[which(S<nrow(data.original))]
+
+  ## 1.) time series decomposition
+  if (decomp == T){
+    # Transform data to ts/msts object
+    #msts_data <- msts(data.original, seasonal.periods = S, ts.frequency = S[1])
+    ts_data <- stats::ts(data.original[,1], frequency = S[1])
+    # Seasonal decompostion with stl()
+    # TODO robust = TRUE allows robust fitting
+    dts_data <- stats::stl(ts_data, s.window = "periodic", robust = TRUE)
+    # plot(dts_data$time.series)
+
+    # Use remainder of stl object
+    data.original <- as.matrix(dts_data$time.series[,3])
+  }
+
+  ## 2.) Feature engineering
   # Original sereis
-  org.series <- as.numeric(scale(data.original)) # scale data
-  # Gradient
+  org.series <- as.numeric(data.original)
+  # One sided gradients
   dyl <- c(0, diff(org.series)) # Differences (y_{i+1} - y_{y-i})
   dyr <- c(diff(org.series), 0) # Differences (y_{i+1} - y_{y-i})
+  # Summation of left and right sided gradient
   gradient <- dyl + dyr # Summation of dyl and dyr
-  # Absolute gradient
+  ## Absolute two sided gradient
   abs.gradient <- abs(dyl) + abs(dyr) - abs(dyl + dyr) # Absolute gradient
+  # Summation of dyl and dyr in accordance to sign(dyl)
+  pos.neg.gradient <- dyl + sign(dyl) * abs(dyr)
+  # Computation of seasonal mad matrix based on strongest seasonality S
+  seas.mat <- matrix(, S[1], ceiling(length(pos.neg.gradient)/S[1]))
+  seas.mat[1:length(pos.neg.gradient)]<- pos.neg.gradient
+  seas.vol <- rep_len(apply(seas.mat, 1, stats::mad, na.rm=TRUE),
+                      length.out=length(pos.neg.gradient))
+  # TODO Tuning parameter to control smoothness of rolling median of seasonal mad
+  H<-1
+  seas.vol.ma <- sapply(1:length(seas.vol), function(x)
+    stats::median(seas.vol[pmax(x-H,1):pmin(x+H,length(seas.vol))]))
+  # Add noise to aviod zero pos.neg.gradient
+  pos.neg.gradient_sc <- scale(pos.neg.gradient + 10^-100)
+  # Relative gradient
+  # Add noise to aviod zero pos.neg.gradient
+  rel.gradient <- as.numeric(pos.neg.gradient_sc / (seas.vol.ma + 10^-100))
   # Seasonal features
   names <- vector()
   seas_feat_mat <- matrix(0, nrow = nrow(data.original), ncol = 0)
@@ -180,127 +217,231 @@ detect_outliers <- function(data,
     seas_feat_mat <- cbind(seas_feat_mat,
                            abs(dylS) + abs(dyrS) - abs(dylS + dyrS))
     # Colnames
-    names <- c(names, paste0("lin.trend.S", S[i]), paste0("abs.seas.grad.S", S[i]))
+    names <- c(names, paste0("seasonality.", S[i]), paste0("abs.seas.grad.S", S[i]))
   }
 
   # Merge features into matrix
-  feat.internal <- cbind(org.series, gradient, abs.gradient, seas_feat_mat)
-  colnames(feat.internal)[4:ncol(feat.internal)] <- names
+  feat.internal <- cbind(org.series, gradient, abs.gradient, rel.gradient, seas_feat_mat)
+  colnames(feat.internal)[5:ncol(feat.internal)] <- names
 
-  # Select relevant features based on user input
-  rel_feat_ind <- c(unlist(feat.int)[1:3],
-                    rep(unlist(feat.int)[4:5], length(S)))
-  feature.mat <- feat.internal[, rel_feat_ind]
+  # TODO Allow users to choose features or to introduce new features
 
-  # Check whether proved number of observations is sufficent large
-  if (max.cluster * ncol(feature.mat) > share * nobs)
-    stop("provided number of observations are too small.")
+  # scale features
+  feat.internal.scaled <- apply(feat.internal,2,scale)
 
-  ## Expand outlier cluster
+  ## 3.) Principal component analysis
+  if(PComp == T){
+    system.time(
+      pf<- stats::princomp(feat.internal.scaled)
+    )
+    # sdev = standard deviations of PCs
+    # scores of the supplied data on the PCs
+    feature.mat<- t(pf$sdev * t(pf$scores))
+    # Restore principal components
+    PCs <- pf
+
+  } else {
+    feature.mat <- feat.internal.scaled # scaled but original features
+    PCs <- NULL
+  }
+
+  ## 4.) Expand outlier cluster by artificially introducing
+  # outliers based on blown up covariance matrix
   mu <- apply(feature.mat, 2, mean) # Calculation of feature means
   sigma <- stats::cov(feature.mat) # Calculation of covariance matrix
 
   # Draw artificial outliers from outlier distribution
-  size_out_cluster <- out.par * ceiling(sqrt(nobs))
+  size_out_cluster <- out.par * ceiling(sqrt(nrow(data.original))) # to extend outlier cluster size relativ for small cluster
 
-  # Production of nn samples from specified
-  # multivariate normal distribution (mu, sigma, K)
+  # Creation of outlier cluster
   pts <- MASS::mvrnorm(size_out_cluster, mu,
-                       sigma * detection.parameter * (2 * log(length(data)))^2)
+                       sigma * detection.parameter * (2 * log(nrow(data.original)))^2)
   # add small noise
-  zz <- feature.mat + stats::rnorm(length(feature.mat)) * noise.par
+  # TODO 10^-5 denotes noise parameter. May become tuning parameter
+  # in case user can introduce features.
+  zz <- feature.mat + stats::rnorm(length(feature.mat)) * 10^-5
 
-  # Objects to restore results
-  models <- list() # Restore estimated models
-  # Determine optimal number of clusters and
-  # model structure of covariance matrix
-  if (is.null(G) |  is.null(modelName)) {
-    BIC <- NULL
-    for (i in 1:model.select.iter) {
-      # Subsample to increase run time
-      zz_ss_ind <- sample(seq_len(nobs),
-                          ceiling(share * nobs), replace = FALSE)
-      out_aug_ind <- sample(seq_len(nrow(pts)),
-                            out.par * ceiling(sqrt(share * nobs)), replace = F)
-      zzaug <- rbind(zz[zz_ss_ind, ], pts[out_aug_ind, ])
-      models[[i]] <- mclust::Mclust(zzaug,
-                                    G = 1 : max.cluster, verbose = FALSE)
-      BIC <- mclust::mclustBICupdate(BIC, models[[i]]$BIC)
-    }
-    # Assign optimal number of clusters and model structure
-    # of covariance matrix to variables
-    G <- which.max(apply(BIC, 1, function(x) max(stats::na.omit(x))))
-    modelName <- colnames(BIC)[which.max(apply(BIC, 2,
-                                               function(x) max(stats::na.omit(x))))]
-  }
-  # Objects to restore results
-  outlier.vec <- rep(F, nobs) # Vector to restore positions of outliers
-  # Matrix to restore probabilities that observations belongs to outlier cluster
-  probs.out.cluster <- matrix(NA, nrow = nobs,
-                              ncol = outlier.detect.iter + model.select.iter)
+  ## Repetitions
+  REP.list <- list()
+  time.feature.inf.list <- list()
+  feature.list <- list()
+  for(j in 1:repetitions){
+    # 5.) Subsetting of data
+    zz_ss_ind <- sample(seq_len(nrow(data.original)),
+                        ceiling(share * nrow(data.original)), replace = FALSE)
+    pts_ss_ind <- sample(seq_len(nrow(pts)),
+                         out.par * ceiling(sqrt(share * nrow(data.original))), replace = F)
+    zzaug <- rbind(zz[zz_ss_ind,], pts[pts_ss_ind,])
 
-  for (j in seq_len(outlier.detect.iter + model.select.iter)) {
-    if (j > model.select.iter) {
-      while (length(models) < j) {
-        # Subsample to increase run time
-        zz_ss_ind <- sample(seq_len(nobs), ceiling(share * nobs), replace = F)
-        out_aug_ind <- sample(seq_len(nrow(pts)),
-                              out.par * ceiling(sqrt(share * nobs)),
-                              replace = F)
-        zzaug <- rbind(zz[zz_ss_ind, ], pts[out_aug_ind, ])
-        ### TODO ###
-        # Make out why mclust algortihm crahses sometimes --> not clear yet
-        # Solution by now: Reestimation
+    # Partitioning: Assigning artificial outlier cluster into one group
+    pp<- c(seq_len(length(zz_ss_ind)), rep(length(zz_ss_ind)+1, length(pts_ss_ind)))
 
-        # G = optimal number of mixture components
-        # modelName = model to be fit in EM pahse
-        models[[j]] <- mclust::Mclust(zzaug, G = G, modelNames = modelName, verbose = FALSE)
-        if (length(models) < j)  warning("Mclust provided empty model,
-        which led to reestimation with new subset of data")
-      }
-    }
-    # Extracting cluster with highest variance (Outlier cluster)
-    vars <- summary(models[[j]], parameters = TRUE)$var
+    ## 6.) Run Mclust algorithm
+    mod <- mclust::Mclust(zzaug, G = G, modelName = modelName, verbose = FALSE, partition = pp)
+
+    # Extract outlier cluster
+    # Obtain variances
+    vars <- summary(mod, parameters = TRUE)$var
     # Function to extract diagonal of covariance matrix
     get.dvar <- function(z) diag(vars[, , z])
     # Extract diagonal of covariance matrix for each cluster
     dvars <- sapply(1:dim(vars)[3], get.dvar)
     # Receive standard deviation of each cluster
     dec <- apply(sqrt(dvars), 2, sum)
-    # Matrix to store density of each observation to belong to clusters
-    dens.mat <- matrix(, nrow = nobs, ncol = length(dec))
+
+    dens.mat <- matrix(, nrow = nrow(data.original), ncol = length(dec))
     # Compute densities of each observation to belong to clusters
     for (g in seq_len(length(dec))) {
       # Mean of cluster g
-      mu <- models[[j]]$parameters$mean[, g]
+      mu <- mod$parameters$mean[, g]
       # Covariance of cluster g
-      sigma <- models[[j]]$parameters$variance$sigma[, , g]
+      sigma <- mod$parameters$variance$sigma[, , g]
       # Compute densities of each observation to belong to clusters
       dens.mat[, g] <- mclust::dmvnorm(zz, mu, sigma)
     }
-    # Compute probability of outliers to belong to kth cluster
+
+    ## 7.) Compute probability of outliers belonging to kth cluster
     probs <- t(apply(dens.mat, 1, function(x) x / sum(x)))
-    # Restore only probabilities of outlier cluster
-    probs.out.cluster[, j] <- probs[, which.max(dec)]
+
+    # Logical values inidcating whether value is an outlier or not
+    outlier.vec<-rep(F,nrow(data.original))
+    outlier.vec[which(probs[,which.max(dec)] >= proba)] <- TRUE
+
+    ## 8.) Compute feature influence
+    # compute feauture combinations
+    if(sum(outlier.vec) != 0 & feat.inf == T){
+      # Grid of all combinations based on all features
+      exp.gri_base <- expand.grid(replicate(ncol(feature.mat), c(0,1), simplify=FALSE))[-1,]
+      # Set deterministic features equal to zero
+
+      exp.gri_base[,seq(5,ncol(feature.mat),2)[1:length(S)]] <- 0
+      # Use only those feautre combinations where mean shift
+
+      # is reasonable...
+      exp.gri <- unique(exp.gri_base)
+      rownames(exp.gri) <- 1:nrow(exp.gri)
+      colnames(exp.gri) <- sapply(seq_len(ncol(exp.gri)), function(x) colnames(feature.mat)[x])
+      feat.inf.mat <- matrix(F, nrow = nrow(data.original), ncol = nrow(exp.gri)) # matrix to restore influence of features on outlier assignment
+      feat.inf.grid.mat <- feat.inf.mat[outlier.vec,]
+      probs.outliers.mean.s <- array(NA, dim = c(nrow(data.original), nrow(exp.gri), mod$G)) # Array to restore probabilities of observations to belong to outlier cluster after feautre manipulation
+      outlier.feat.list <- list() # list of influential feature combination
+      for(k in 1:nrow(exp.gri)){
+        inde <- which(exp.gri[k,]==1)
+        # Shift feature values to feature means of identified outliers
+        feature.mat.adj <- feature.mat
+        # Shift mean of all outliers and for the corresponding feature combination at once
+        # TODO How to calculate mean?
+        feature.mat.adj[outlier.vec, inde] <-  matrix(rep(apply(as.matrix(feature.mat[-outlier.vec, inde]),2, mean), sum(outlier.vec)),
+                                                      nrow = sum(outlier.vec), ncol = length(inde), byrow =T)
+
+        # Objects to restore densities of manipulated outliers
+        dens.mat.mani <- matrix(,nrow=sum(outlier.vec), ncol=length(dec))
+
+        # Compute densities for manipulated outliers belonging to clusters
+        for(g in 1:length(dec)){
+          # Receive means and sigma for specific cluster
+          mu <- mod$parameters$mean[,g]
+          sigma <- mod$parameters$variance$sigma[,,g]
+
+          # Compute densities for manipulated outlier vector
+          dens.mat.mani[,g]<-mclust::dmvnorm(feature.mat.adj[outlier.vec, ,drop=FALSE], mu, sigma)
+        }
+
+        # Compute probability of outliers to belong to kth cluster
+        probs.outliers.mean.s[which(outlier.vec==T),k,] <- t(apply(dens.mat.mani, 1, function(x) x/sum(x)))
+
+        # Assign logical value to specific feature combination which caused outlier assignment
+        moved.outliers <- which(probs.outliers.mean.s[which(outlier.vec==T),
+                                                      k, which.max(dec)] <= proba)
+        feat.inf.mat[which(outlier.vec==T)[moved.outliers], k] <- T
+      }
+
+      ## 9) Create output list (reduced version)
+      # nrow = identified outliers of repetition i
+      # ncol = feature combinations
+      feat.inf.grid.mat <- feat.inf.mat[outlier.vec, ,drop=FALSE]
+
+      # Select only features which caused class shift
+      outlier.feat.list <- sapply(as.character(which(outlier.vec == T)),function(x) NULL)
+      for (jj in 1:sum(outlier.vec)){
+        # matrix containg only feature combination which caused class shift
+        exp.gri.mat <- exp.gri[which(feat.inf.grid.mat[jj, ,drop=FALSE] == T),]
+
+        ## Compute all combinations
+        r.sums <- rowSums(exp.gri.mat) # how often occurs each feature combination
+
+        l.el <- list()
+        for (l in seq_len(ncol(feature.mat))){
+          l.el <- c(l.el,sapply(which(r.sums == l), function(x) which(exp.gri.mat[x,] == 1), simplify = F))
+        }
+
+        name <- paste(which(outlier.vec==T)[jj])
+        outlier.feat.list[[name]] <- l.el
+
+        ind <- vector()
+        for (jjj in 1:length(l.el)){
+          ind <- c(ind, which(lapply(l.el, function(x) sum(l.el[[jjj]] %in% x) == length(l.el[[jjj]])) ==T))
+        }
+
+        # Feature combination, which caused outlier assignment - unqiue
+        outlier.feat.list[[name]] <- as.numeric(names(l.el[which(table(ind)==1)]))
+      }
+    } else {
+      probs.outliers.mean.s <- NULL
+      outlier.feat.list <- NULL
+
+    }
+
+    ## 10) Restore subsample results
+    REP.list[[paste("Rep",j)]] <- list("Model" = mod,
+                                       "Outlier.clus" = which.max(dec),
+                                       "Probs" = probs,
+                                       "Outlier.pos" = outlier.vec,
+                                       "outlier.feat.list" = outlier.feat.list,
+                                       "ProbsMeanShift" = probs.outliers.mean.s,
+                                       "Subset" = zzaug
+    )
   }
-  # Vector with numeric values indicating
-  # whether observation is an outlier or not
-  probs_out_vec <- apply(probs.out.cluster, 1, mean)
-  # Logical values inidcating whether value is an outlier or not
-  outlier.vec[which(probs_out_vec >= proba)] <- TRUE
-  # Vector with logical values indicating whether
-  # observation (with adjacent values) is an outlier or not
-  outlier.aug <- rep(FALSE, nobs)
-  outlier.aug[unique(unlist(sapply(which(outlier.vec == TRUE),
-                                   function(x) pmax(x - mar, 1) : pmin(x + mar, nobs))))] <- TRUE
-  result <- list(original.data = data.original,
-                 outlier.probs =  probs_out_vec,
-                 estimated.models = models,
-                 BIC = BIC,
+
+  ## 11) Average results
+  # All detected outliers over all repetitions based on proba
+  outlier.vec.rep <- unique(unlist(lapply(REP.list, function(x) which(x$Outlier.pos==T))))
+  feature.list <- sapply(as.character(outlier.vec.rep),function(x) NULL)
+
+  # Restore Influential Features over all repetitions and for each detected outlier based on proba
+  if( length(outlier.vec.rep ) != 0 & feat.inf == T){
+    for( k in names(feature.list)){
+      for( kk in seq_len(repetitions)){
+        # unique = drop duplicated feature combinations over repetitions
+        feature.list[[k]] <- unique(c(feature.list[[k]],
+                                        unlist(REP.list[[kk]]$outlier.feat.list[which(names(REP.list[[kk]]$outlier.feat.list) == k)])))
+      }
+    }
+  }
+
+  # Probabilities of being outlying data for each observation and over all repetitions
+  probs.mat <- matrix(unlist((lapply(REP.list, function(x) x$Probs[,x$Outlier.clus]))), ncol = length(REP.list), byrow = F)
+
+  # Results
+  probs.outlier.av <- apply(probs.mat,1,mean)
+  outlier.pos.av <- which(probs.outlier.av > proba) # Final outliers based on averaging and above proba threshold
+
+  # feature grid
+  if( length(outlier.vec.rep ) != 0 & feat.inf == T){
+    exp.grid <- apply(exp.gri,1,function(x) names(which(x == 1)))
+  } else {
+    exp.grid <- NULL
+  }
+
+  result <- list(data = data,
+                 outlier.pos = outlier.pos.av,
+                 outlier.probs = probs.outlier.av,
+                 repetitions =  REP.list,
                  features = feature.mat,
-                 outlier.pos = outlier.vec,
-                 outlier.pos.aug = outlier.aug,
-                 outlier.probs.mat = probs.out.cluster)
-  #class(result) <- "tsrobprep"
+                 inf.feature.combinations = feature.list,
+                 feature.inf.tab = exp.grid,
+                 pc = PCs
+  )
   return(result)
 }
+

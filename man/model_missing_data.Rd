@@ -7,9 +7,10 @@
 model_missing_data(
   data,
   S,
-  tau = 0.5,
+  tau = NULL,
   no.of.last.indices.to.fix = S[1],
   indices.to.fix = NULL,
+  replace.recursively = TRUE,
   p = NULL,
   mirror = FALSE,
   lags = NULL,
@@ -19,10 +20,13 @@ model_missing_data(
   lag.externals = FALSE,
   consider.as.missing = NULL,
   whole.period.missing.only = FALSE,
+  debias = FALSE,
   min.val = -Inf,
   max.val = Inf,
   Cor_thres = 0.5,
   digits = 3,
+  ICpen = "BIC",
+  decompose.pars = list(),
   ...
 )
 }
@@ -30,25 +34,30 @@ model_missing_data(
 \item{data}{an input vector, matrix or data frame of dimension nobs x nvars
 containing missing values; each column is a variable.}
 
-\item{S}{a number or vector describing the seasonalities (S_1, ..., S_K) in the data,
-e.g. c(24, 168) if the data consists of 24 observations per day and there is
-a weekly seasonality in the data.}
+\item{S}{a number or vector describing the seasonalities (S_1, ..., S_K) in
+the data, e.g. c(24, 168) if the data consists of 24 observations per day
+and there is a weekly seasonality in the data.}
 
 \item{tau}{the quantile(s) of the missing values to be estimated in the
-quantile regression. Tau accepts all values in (0,1), the default is 0.5.}
+quantile regression. Tau accepts all values in (0,1). If NULL, then the
+weighted lasso regression is performed.}
 
 \item{no.of.last.indices.to.fix}{a number of observations in the tail of
-the data to be fixed, by default set to S.}
+the data to be fixed, by default set to first element of S.}
 
 \item{indices.to.fix}{indices of the data to be fixed. If NULL, then it is
 calculated based on the no.of.last.indices.to.fix parameter. Otherwise, the
 no.of.last.indices.to.fix parameter is ignored.}
 
-\item{p}{a number or vector of length(S) = K indicating the order of a K-seasonal
-autoregressive process to be estimated. If NULL, chosen data-based.}
+\item{replace.recursively}{if TRUE then the algorithm uses replaced values
+to model the remaining missings.}
 
-\item{mirror}{if TRUE then autoregressive lags up to order p are not only added
-to the seasonalities but also subtracted.}
+\item{p}{a number or vector of length(S) = K indicating the order of a
+K-seasonal autoregressive process to be estimated. If NULL, chosen
+data-based.}
+
+\item{mirror}{if TRUE then autoregressive lags up to order p are not only
+added to the seasonalities but also subtracted.}
 
 \item{lags}{a numeric vector with the lags to use in the autoregression.
 Negative values are accepted and then also the "future" observations are
@@ -57,9 +66,9 @@ used for modelling. If not NULL, p and mirror are ignored.}
 \item{extreg}{a vector, matrix or data frame of data containing external
 regressors; each column is a variable.}
 
-\item{n.best.extreg}{a numeric value specifying the maximal number of considered
-best correlated external regressors (selected in decreasing order). If NULL,
-then all variables in extreg are used for modelling.}
+\item{n.best.extreg}{a numeric value specifying the maximal number of
+considered best correlated external regressors (selected in decreasing
+order). If NULL, then all variables in extreg are used for modelling.}
 
 \item{use.data.as.ext}{logical specifying whether to use the remaining
 variables in the data as external regressors or not.}
@@ -71,9 +80,12 @@ parameter lags.}
 \item{consider.as.missing}{a vector of numerical values which are considered
 as missing in the data.}
 
-\item{whole.period.missing.only}{if FALSE, then all observations which correspond to
-the values of consider.as.missing are treated as missings. If TRUE, then only
-consecutive observations of specified length are considered (length is defined by S).}
+\item{whole.period.missing.only}{if FALSE, then all observations which
+correspond to the values of consider.as.missing are treated as missings. If
+TRUE, then only consecutive observations of specified length are considered
+(length is defined by first element of S).}
+
+\item{debias}{if TRUE, the recursive replacement is additionally debiased.}
 
 \item{min.val}{a single value or a vector of length nvars providing the
 minimum possible value of each variable in the data. If a single value, then
@@ -83,45 +95,61 @@ it applies to all variables. By default set to -Inf.}
 maximum possible value of each variable in the data. If a single value, then
 it applies to all variables. By default set to Inf.}
 
-\item{Cor_thres}{a single value providing the correlation threshold from which external
-regressors are considered in the quantile regression.}
+\item{Cor_thres}{a single value providing the correlation threshold from
+which external regressors are considered in the quantile regression.}
 
 \item{digits}{integer indicating the number of decimal places allowed
 in the data, by default set to 3.}
 
-\item{...}{additional arguments for the \link[quantreg]{rq.fit.fnb} algorithm.}
+\item{ICpen}{is the information criterion penalty for lambda choice in the
+\link[glmnet]{glmnet} algorithm. It can be a string: "BIC", "HQC" or "AIC",
+or a fixed number.}
+
+\item{decompose.pars}{named list containing additional arguments for the
+\link[tsrobprep]{robust_decompose} function.}
+
+\item{...}{additional arguments for the \link[glmnet]{glmnet} or
+\link[quantreg]{rq.fit.fnb} algorithms.}
 }
 \value{
 An object of class "tsrobprep" which contains the original data, the
 indices of the data that were modelled, the given quantile values, a list of
-sparse matrices with the modelled data to be imputed and a list of the numbers
-of models estimated for every variable.
+sparse matrices with the modelled data to be imputed and a list of the
+numbers of models estimated for every variable.
 }
 \description{
 Returns an object of class "tsrobprep" which contains the original data and
 the modelled missing values to be imputed. The function model_missing_data
-models missing values in a time series data using the quantile regression
-implemented in quantreg package. The model uses autoregression on the time
-series as explanatory variables as well as the provided external variables.
-The function is designed for numerical data only.
+models missing values in a time series data using a robust time series
+decomposition with the weighted lasso or the quantile regression. The model
+uses autoregression on the time series as explanatory variables as well as
+the provided external variables. The function is designed for numerical data
+only.
 }
 \details{
-The function uses quantile regression in order to model missing
-values and prepare it for imputation. In this purpose the
-\link[quantreg]{rq.fit.fnb} function from quantreg package is used. The
-function computes the quantile regression methods utilizing the Frisch-Newton
-algorithm for user-specified quantile values. The modelled values can be
+The function uses robust time series decomposition with weighted
+lasso or quantile regression in order to model missing values and prepare it
+for imputation. In this purpose the \link[tsrobprep]{robust_decompose}
+function together with the \link[glmnet]{glmnet} are used in case of mean
+regression, i.e. tau = NULL. In case of quantile regression, i.e.
+tau != NULL the \link[tsrobprep]{robust_decompose} function is used together
+with the \link[quantreg]{rq.fit.fnb} function. The modelled values can be
 imputed using \link[tsrobprep]{impute_modelled_data} function.
 }
 \examples{
-model.miss <- model_missing_data(data = GBload[,-1], S = c(48,7*48), tau = 0.5,
-              no.of.last.indices.to.fix = dim(GBload)[1], consider.as.missing = 0,
-              min.val = 0)
+\dontrun{
+model.miss <- model_missing_data(
+    data = GBload[,-1], S = c(48,7*48),
+    no.of.last.indices.to.fix = dim(GBload)[1], consider.as.missing = 0,
+    min.val = 0
+)
 model.miss$estimated.models
 model.miss$replaced.indices
 new.GBload <- impute_modelled_data(model.miss)
 }
+}
 \seealso{
+\link[tsrobprep]{robust_decompose},
 \link[tsrobprep]{impute_modelled_data}, \link[tsrobprep]{detect_outliers},
 \link[tsrobprep]{auto_data_cleaning}
 }

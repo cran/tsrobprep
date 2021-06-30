@@ -1,22 +1,22 @@
 Package: tsrobprep
 Title: Robust Preprocessing of Time Series Data
-Version: 0.1.0
-Date: 2021-04-11
+Version: 0.3.0
+Date: 2021-06-30
 Authors@R: c(
     person(given = "Michał",
            family = "Narajewski",
            role = c("aut", "cre"),
            email = "michal.narajewski@uni-due.de",
            comment = c(ORCID = "https://orcid.org/0000-0002-3115-0162")),
+    person(given = "Jens",
+           family = "Kley-Holsteg",
+           role = "aut",
+           email = "jens.kley-holsteg@hs-ruhrwest.de"),
     person(given = "Florian",
            family = "Ziel",
            role = "aut",
            email = "florian.ziel@uni-due.de",
-           comment = c(ORCID = "https://orcid.org/0000-0002-2974-2660")),
-    person(given = "Jens",
-           family = "Kley-Holsteg",
-           role = "ctb",
-           email = "jens.kley-holsteg@hs-ruhrwest.de"))
+           comment = c(ORCID = "https://orcid.org/0000-0002-2974-2660")))
 Description: Methods for handling the missing values outliers are introduced in
     this package. The recognized missing values and outliers are replaced 
     using a model-based approach. The model may consist of both autoregressive
@@ -27,14 +27,15 @@ Description: Methods for handling the missing values outliers are introduced in
 Depends: R (>= 3.2.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: Matrix, quantreg, mclust, MASS
+Imports: glmnet, MASS, Matrix, mclust, quantreg, splines, textTinyR,
+        zoo
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-04-11 13:46:48 UTC; michal
+Packaged: 2021-06-30 14:22:20 UTC; michal
 Author: Michał Narajewski [aut, cre] (<https://orcid.org/0000-0002-3115-0162>),
-  Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>),
-  Jens Kley-Holsteg [ctb]
+  Jens Kley-Holsteg [aut],
+  Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>)
 Maintainer: Michał Narajewski <michal.narajewski@uni-due.de>
 Repository: CRAN
-Date/Publication: 2021-04-11 14:00:02 UTC
+Date/Publication: 2021-06-30 14:30:02 UTC
