@@ -88,7 +88,7 @@ auto_data_cleaning <- function(
 
     # similarly for the outlier case
     replaced.indices[[var.id]][["outliers"]] <- setdiff(
-      indices.to.fix[handled_outliers$outlier.pos[indices.to.fix]],
+      indices.to.fix[indices.to.fix %in% handled_outliers$outlier.pos],
       unlist(replaced.indices[[var.id]]))
 
     # set the detected outliers to NA
@@ -100,7 +100,7 @@ auto_data_cleaning <- function(
 
   # final model_missing_data call - after removing the outliers
   modelled_missings <- do.call(tsrobprep::model_missing_data, c(
-    list(data = data.original, tau = 0.5, S = S,
+    list(data = data.original, tau = tau, S = S,
          no.of.last.indices.to.fix = no.of.last.indices.to.fix,
          indices.to.fix = indices.to.fix), model.missing.pars))
 

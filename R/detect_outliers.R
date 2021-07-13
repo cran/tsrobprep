@@ -1,4 +1,4 @@
-#' Detects unreliable outliers in univariate time series data based on
+#' Detects unreliable outliers in univariate time series data based on 
 #' model-based clustering
 #'
 #' @description This function applies finite mixture modelling to compute
@@ -6,7 +6,7 @@
 #' in an univariate time series.
 #' By utilizing the \link[mclust]{Mclust} package the data is
 #' assigned in G clusters whereof one is modelled as an outlier cluster.
-#' The clustering process is based on features, which are modelled to
+#' The clustering process is based on features, which are modelled to 
 #' differentiate normal from outlying observation.Beside computing
 #' the probability of each observation being outlying data also
 #' the specific cause in terms of the responsible feature/ feature combination
@@ -37,7 +37,7 @@
 #' share of outliers in data increases. A priori it is assumed that
 #' out.par * ceiling(sqrt(nrow(data.original))) number of observations are outlying observations.
 #' @param detection.parameter denotes a parameter to regulate the
-#' detection sensitivity. By default set to 1. It is assumed that the outlier cluster
+#' detection sensitivity. By default set to 1. It is assumed that the outlier cluster 
 #' follows a (multivariate) Gaussian distribution parameterized by sample mean and a blown up
 #' sample covariance matrix of the feature space. The covariance matrix is blown up
 #' by detection.parameter * (2 * log(length(data)))^2.
@@ -52,6 +52,8 @@
 #' is set to "VVV". The help file for \link[mclust]{mclustModelNames} describes
 #' the available models. Choice of modelName influences the fit to the data as well as
 #' the computational time.
+#' @param ext.val denotes the number of observations for each side of an identified outlier,
+#' which should also be treated as outliyng data. By default set to 1.
 #' @param ... additional arguments for the \link[mclust]{Mclust} function.
 #' @details The detection of outliers is addressed by
 #' model based clustering based on parameterized finite Gaussian mixture models.
@@ -66,8 +68,8 @@
 #'   \item{gradient}{denotes the summation of the two sided gradient of the org.series.}
 #'   \item{abs.gradient}{denotes the summation of the absolute two sided gradient of
 #'    org.series.}
-#'   \item{rel.gradient}{denotes the summation of the two sided absolute gradient of the
-#'   org.series with sign based on left sided gradient in relation to the
+#'   \item{rel.gradient}{denotes the summation of the two sided absolute gradient of the 
+#'   org.series with sign based on left sided gradient in relation to the 
 #'   rolling mean absolut deviation based on most relevant seasonality S.}
 #'   \item{abs.seas.grad}{denotes the summation of the absolute two sided seasonal gradient of
 #'   org.series based on seasonalties S.}
@@ -76,15 +78,17 @@
 #' introduced feature space.
 #' @return a list containing the following elements:
 #' \item{data}{numeric vector containing the original data.}
-#' \item{outlier.pos}{a logical vector indicating the position of each outlier.}
+#' \item{outlier.pos}{a vector indicating the position of each outlier and the
+#' corresponding neighboorhood controled by ext.val.}
+#' \item{outlier.pos.raw}{a vector indicating the position of each outlier.}
 #' \item{outlier.probs}{a vector containing all probabilities for each observation
 #' being outlying data.}
 #' \item{Repetitions}{provides a list for each repetition containing the estimated model,
 #' the outlier cluster, the probabilities for each observation belonging to the estimated
-#' clusters, the outlier position, the influence of each feature/ feature combination
-#' on the identified outyling data, and the corresponding probabilities
-#' after shift to the feature mean of each considered outlier, as well as the applied
-#' subset of the extended feature matrix for estimation (including artificially introduced
+#' clusters, the outlier position, the influence of each feature/ feature combination 
+#' on the identified outyling data, and the corresponding probabilities 
+#' after shift to the feature mean of each considered outlier, as well as the applied 
+#' subset of the extended feature matrix for estimation (including artificially introduced 
 #' outliers).
 #' }
 #' \item{features}{a matrix containg the feature matrix. Each column is a feature.}
@@ -95,36 +99,50 @@
 #' of the feature matrix.}
 #' @examples
 #' \dontrun{
-#'set.seed(1)
-#'id <- 14000:17000
-#'# Replace missing values
-#'modelmd <- model_missing_data(data = GBload[id, -1], tau = 0.5,
-#'                              S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
-#'                              consider.as.missing = 0, min.val = 0)
-#'# Impute missing values
-#'data.imputed <- impute_modelled_data(modelmd)
-#'
-#'#Detect outliers
-#'system.time(
-#'  o.ident <- detect_outliers(data = data.imputed, S = c(48, 336))
-#')
-#'
-#'# Plot of identified outliers in time series
-#'outlier.vector <- rep(F,length(data.imputed))
-#'outlier.vector[o.ident$outlier.pos] <- T
-#'plot(data.imputed, type = "o", col=1 + outlier.vector,
-#'     pch = 1 + 18 * outlier.vector)
-#'
-#'# table of identified outliers and corresponding probs being outlying data
-#'df <- data.frame(o.ident$outlier.pos,unlist(o.ident$outlier.probs)[o.ident$outlier.pos])
-#'colnames(df) <- c("Outlier position", "Probability of being outlying data")
-#'df
-#'
-#'# Plot of feature matrix
-#'plot.ts(o.ident$features, type = "o",
-#'        col = 1 + outlier.vector,
-#'        pch = 1 + 1 * outlier.vector)
-#'
+#' set.seed(1)
+#' id <- 14000:17000
+#' # Replace missing values
+#' modelmd <- model_missing_data(data = GBload[id, -1], tau = 0.5,
+#'                               S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
+#'                               consider.as.missing = 0, min.val = 0)
+#' # Impute missing values
+#' data.imputed <- impute_modelled_data(modelmd)
+#' 
+#' #Detect outliers
+#' system.time(
+#'   o.ident <- detect_outliers(data = data.imputed, S = c(48, 336))
+#' )
+#' 
+#' # Plot of identified outliers in time series
+#' outlier.vector <- rep(F,length(data.imputed))
+#' outlier.vector[o.ident$outlier.pos] <- T
+#' plot(data.imputed, type = "o", col=1 + 1 * outlier.vector,
+#'      pch = 1 + 18 * outlier.vector)
+#' 
+#' # table of identified raw outliers and corresponding probs being outlying data
+#' df <- data.frame(o.ident$outlier.pos.raw,unlist(o.ident$outlier.probs)[o.ident$outlier.pos.raw])
+#' colnames(df) <- c("Outlier position", "Probability of being outlying data")
+#' df
+#' 
+#' # Plot of feature matrix
+#' plot.ts(o.ident$features, type = "o",
+#'         col = 1 + outlier.vector,
+#'         pch = 1 + 1 * outlier.vector)
+#' 
+#' # table of outliers and corresponding features/ feature combinations,
+#' # which caused assignment to outlier cluster
+#' # Detect outliers with feat.int = T
+#' set.seed(1)
+#' system.time(
+#'   o.ident <- detect_outliers(data = data.imputed, S = c(48, 336), feat.inf = T)
+#' )
+#' feature.imp <- unlist(lapply(o.ident$inf.feature.combinations,
+#'                              function(x) paste(o.ident$feature.inf.tab[x], collapse = " | ")))
+#' 
+#' df <- data.frame(o.ident$outlier.pos.raw,o.ident$outlier.probs[o.ident$outlier.pos.raw],
+#'                  feature.imp[as.numeric(names(feature.imp)) %in% o.ident$outlier.pos.raw])
+#' colnames(df) <- c("Outlier position", "Probability being outlying data", "Responsible features")
+#' View(df)
 #' }
 #' @export
 #' @seealso \code{\link[tsrobprep]{model_missing_data}},
@@ -146,19 +164,29 @@ detect_outliers <- function(data,
                             G = NULL,
                             modelName = "VVV",
                             feat.inf = F,
+                            ext.val = 1,
                             ...) {
   # transform data into matrix format
   data.original <- as.matrix(data)
 
   # validate the variables' correctness - basic validation
   if(sum(is.na(data.original)) != 0) stop("Please impute missing data before usage.")
-  if(is.null(share)) share<- pmin(2*round(length(data.original)^(sqrt(2)/2)),
-                                  length(data.original))/length(data.original)
+  if(is.null(share)){
+    subset.length <- pmin(2*round(length(data.original)^(sqrt(2)/2)),
+                                  length(data.original))
+    # Set share to 1 if number of observations are smaller than 1000
+    if(subset.length < 1000){
+      share <- 1
+    } else {
+      share <- subset.length/length(data.original)
+    }
+  }
+  
   if(is.null(G)){ # Create grid for search of clusters
     phi<- (sqrt(5)+1)/2
     G<- round((phi^(2+1:log(max.cluster-1, phi)))/sqrt(5) )
   }
-
+  
   ## TODO Disable seasonal features if data is too short
   if(sum(nrow(data.original) <= S) < length(S))  S <- S[which(S<nrow(data.original))]
 
@@ -187,8 +215,8 @@ detect_outliers <- function(data,
   ## Absolute two sided gradient
   abs.gradient <- abs(dyl) + abs(dyr) - abs(dyl + dyr) # Absolute gradient
   # Summation of dyl and dyr in accordance to sign(dyl)
-  pos.neg.gradient <- dyl + sign(dyl) * abs(dyr)
-  # Computation of seasonal mad matrix based on strongest seasonality S
+  pos.neg.gradient <- dyl + sign(dyl) * abs(dyr) 
+  # Computation of seasonal mad matrix based on strongest seasonality S 
   seas.mat <- matrix(, S[1], ceiling(length(pos.neg.gradient)/S[1]))
   seas.mat[1:length(pos.neg.gradient)]<- pos.neg.gradient
   seas.vol <- rep_len(apply(seas.mat, 1, stats::mad, na.rm=TRUE),
@@ -198,7 +226,7 @@ detect_outliers <- function(data,
   seas.vol.ma <- sapply(1:length(seas.vol), function(x)
     stats::median(seas.vol[pmax(x-H,1):pmin(x+H,length(seas.vol))]))
   # Add noise to aviod zero pos.neg.gradient
-  pos.neg.gradient_sc <- scale(pos.neg.gradient + 10^-100)
+  pos.neg.gradient_sc <- scale(pos.neg.gradient + 10^-100) 
   # Relative gradient
   # Add noise to aviod zero pos.neg.gradient
   rel.gradient <- as.numeric(pos.neg.gradient_sc / (seas.vol.ma + 10^-100))
@@ -223,7 +251,7 @@ detect_outliers <- function(data,
   # Merge features into matrix
   feat.internal <- cbind(org.series, gradient, abs.gradient, rel.gradient, seas_feat_mat)
   colnames(feat.internal)[5:ncol(feat.internal)] <- names
-
+  
   # TODO Allow users to choose features or to introduce new features
 
   # scale features
@@ -315,7 +343,7 @@ detect_outliers <- function(data,
       # Set deterministic features equal to zero
 
       exp.gri_base[,seq(5,ncol(feature.mat),2)[1:length(S)]] <- 0
-      # Use only those feautre combinations where mean shift
+      # Use only those feautre combinations where mean shift 
 
       # is reasonable...
       exp.gri <- unique(exp.gri_base)
@@ -422,10 +450,15 @@ detect_outliers <- function(data,
   # Probabilities of being outlying data for each observation and over all repetitions
   probs.mat <- matrix(unlist((lapply(REP.list, function(x) x$Probs[,x$Outlier.clus]))), ncol = length(REP.list), byrow = F)
 
-  # Results
+  ## Results
+  # outlier.pos.raw
   probs.outlier.av <- apply(probs.mat,1,mean)
   outlier.pos.av <- which(probs.outlier.av > proba) # Final outliers based on averaging and above proba threshold
 
+  #outlier.pos augmented 
+  outlier.pos.aug <- as.vector(unique(sapply(outlier.pos.av, function(x) pmax(x-ext.val,1):pmin(x+ext.val, nrow(data.original)))))
+  if(length(outlier.pos.aug)==0) outlier.pos.aug <- NULL
+  
   # feature grid
   if( length(outlier.vec.rep ) != 0 & feat.inf == T){
     exp.grid <- apply(exp.gri,1,function(x) names(which(x == 1)))
@@ -434,7 +467,8 @@ detect_outliers <- function(data,
   }
 
   result <- list(data = data,
-                 outlier.pos = outlier.pos.av,
+                 outlier.pos = outlier.pos.aug,
+                 outlier.pos.raw = outlier.pos.av,
                  outlier.probs = probs.outlier.av,
                  repetitions =  REP.list,
                  features = feature.mat,

@@ -19,6 +19,7 @@ detect_outliers(
   G = NULL,
   modelName = "VVV",
   feat.inf = F,
+  ext.val = 1,
   ...
 )
 }
@@ -77,12 +78,17 @@ the computational time.}
 \item{feat.inf}{logical value indicating whether influential features/ feature combinations
 should be computed. By default set to FALSE.}
 
+\item{ext.val}{denotes the number of observations for each side of an identified outlier,
+which should also be treated as outliyng data. By default set to 1.}
+
 \item{...}{additional arguments for the \link[mclust]{Mclust} function.}
 }
 \value{
 a list containing the following elements:
 \item{data}{numeric vector containing the original data.}
-\item{outlier.pos}{a logical vector indicating the position of each outlier.}
+\item{outlier.pos}{a vector indicating the position of each outlier and the
+corresponding neighboorhood controled by ext.val.}
+\item{outlier.pos.raw}{a vector indicating the position of each outlier.}
 \item{outlier.probs}{a vector containing all probabilities for each observation
 being outlying data.}
 \item{Repetitions}{provides a list for each repetition containing the estimated model,
@@ -141,32 +147,46 @@ set.seed(1)
 id <- 14000:17000
 # Replace missing values
 modelmd <- model_missing_data(data = GBload[id, -1], tau = 0.5,
-                             S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
-                             consider.as.missing = 0, min.val = 0)
+                              S = c(48, 336), indices.to.fix = seq_len(nrow(GBload[id, ])),
+                              consider.as.missing = 0, min.val = 0)
 # Impute missing values
 data.imputed <- impute_modelled_data(modelmd)
 
 #Detect outliers
 system.time(
- o.ident <- detect_outliers(data = data.imputed, S = c(48, 336))
+  o.ident <- detect_outliers(data = data.imputed, S = c(48, 336))
 )
 
 # Plot of identified outliers in time series
 outlier.vector <- rep(F,length(data.imputed))
 outlier.vector[o.ident$outlier.pos] <- T
-plot(data.imputed, type = "o", col=1 + outlier.vector,
-    pch = 1 + 18 * outlier.vector)
+plot(data.imputed, type = "o", col=1 + 1 * outlier.vector,
+     pch = 1 + 18 * outlier.vector)
 
-# table of identified outliers and corresponding probs being outlying data
-df <- data.frame(o.ident$outlier.pos,unlist(o.ident$outlier.probs)[o.ident$outlier.pos])
+# table of identified raw outliers and corresponding probs being outlying data
+df <- data.frame(o.ident$outlier.pos.raw,unlist(o.ident$outlier.probs)[o.ident$outlier.pos.raw])
 colnames(df) <- c("Outlier position", "Probability of being outlying data")
 df
 
 # Plot of feature matrix
 plot.ts(o.ident$features, type = "o",
-       col = 1 + outlier.vector,
-       pch = 1 + 1 * outlier.vector)
+        col = 1 + outlier.vector,
+        pch = 1 + 1 * outlier.vector)
 
+# table of outliers and corresponding features/ feature combinations,
+# which caused assignment to outlier cluster
+# Detect outliers with feat.int = T
+set.seed(1)
+system.time(
+  o.ident <- detect_outliers(data = data.imputed, S = c(48, 336), feat.inf = T)
+)
+feature.imp <- unlist(lapply(o.ident$inf.feature.combinations,
+                             function(x) paste(o.ident$feature.inf.tab[x], collapse = " | ")))
+
+df <- data.frame(o.ident$outlier.pos.raw,o.ident$outlier.probs[o.ident$outlier.pos.raw],
+                 feature.imp[as.numeric(names(feature.imp)) \%in\% o.ident$outlier.pos.raw])
+colnames(df) <- c("Outlier position", "Probability being outlying data", "Responsible features")
+View(df)
 }
 }
 \seealso{
