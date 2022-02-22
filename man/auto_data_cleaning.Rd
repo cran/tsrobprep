@@ -56,7 +56,7 @@ The function calls \link[tsrobprep]{model_missing_data} to clean
 the data from missing values, \link[tsrobprep]{detect_outliers} to detect
 outliers, removes them and finally applies again
 \link[tsrobprep]{model_missing_data} function. For details see the
-functions' respective help sections.
+functions' respective help sections. \insertNoCite{*}{tsrobprep}
 }
 \examples{
 \dontrun{
@@ -67,6 +67,9 @@ autoclean <- auto_data_cleaning(
 )
 autoclean$replaced.indices
 }
+}
+\references{
+\insertAllCited{}
 }
 \seealso{
 \code{\link[tsrobprep]{model_missing_data}},

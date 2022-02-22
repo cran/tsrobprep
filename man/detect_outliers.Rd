@@ -124,7 +124,7 @@ model based clustering based on parameterized finite Gaussian mixture models.
 For cluster estimation the \link[mclust]{Mclust} function is applied.
 Models are estimated by the EM algorithm initialized by hierarchical
 model-based agglomerative clustering. The optimal model is selected
-according to BIC.
+according to BIC. \insertNoCite{*}{tsrobprep}
 The following features based on the introduced data are used in the clustering process:
 \describe{
 \item{org.series}{denotes the scaled and potantially decomposed original time series.}
@@ -188,6 +188,9 @@ df <- data.frame(o.ident$outlier.pos.raw,o.ident$outlier.probs[o.ident$outlier.p
 colnames(df) <- c("Outlier position", "Probability being outlying data", "Responsible features")
 View(df)
 }
+}
+\references{
+\insertAllCited{}
 }
 \seealso{
 \code{\link[tsrobprep]{model_missing_data}},

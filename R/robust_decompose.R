@@ -17,10 +17,12 @@
 #' regressors; each column is a variable.
 #' @param use.autoregressive if TRUE, removes the autoregression from the
 #' series. If NULL, it is derived data based.
-#' @details
 #' @return A list which contains a vector of fitted values, a vector of weights
 #' given to the original time series, and a matrix of components of the
-#' decomposition.
+#' decomposition.\insertNoCite{*}{tsrobprep}
+#' @references
+#' \insertAllCited{}
+#' @importFrom Rdpack reprompt
 #' @examples
 #' \dontrun{
 #' GBload.decomposed <- robust_decompose(GBload[,-1], S = c(48,7*48))

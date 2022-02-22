@@ -135,6 +135,7 @@ regression, i.e. tau = NULL. In case of quantile regression, i.e.
 tau != NULL the \link[tsrobprep]{robust_decompose} function is used together
 with the \link[quantreg]{rq.fit.fnb} function. The modelled values can be
 imputed using \link[tsrobprep]{impute_modelled_data} function.
+\insertNoCite{*}{tsrobprep}
 }
 \examples{
 \dontrun{
@@ -147,6 +148,9 @@ model.miss$estimated.models
 model.miss$replaced.indices
 new.GBload <- impute_modelled_data(model.miss)
 }
+}
+\references{
+\insertAllCited{}
 }
 \seealso{
 \link[tsrobprep]{robust_decompose},

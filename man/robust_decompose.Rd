@@ -42,7 +42,7 @@ series. If NULL, it is derived data based.}
 \value{
 A list which contains a vector of fitted values, a vector of weights
 given to the original time series, and a matrix of components of the
-decomposition.
+decomposition.\insertNoCite{*}{tsrobprep}
 }
 \description{
 Decompose a time series into trend, level and potentially multiple seasonal
@@ -53,4 +53,7 @@ components including all interactions. The function allows for missings.
 GBload.decomposed <- robust_decompose(GBload[,-1], S = c(48,7*48))
 head(GBload.decomposed$components)
 }
+}
+\references{
+\insertAllCited{}
 }

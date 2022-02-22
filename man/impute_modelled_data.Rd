@@ -16,7 +16,7 @@ default all quantiles present in the object are used.}
 }
 \value{
 A matrix or a list of matrices with imputed missing values or
-outliers.
+outliers. \insertNoCite{*}{tsrobprep}
 }
 \description{
 Returns a matrix or a list of matrices with imputed missing values or
@@ -34,6 +34,9 @@ model.miss$estimated.models
 model.miss$replaced.indices
 new.GBload <- impute_modelled_data(model.miss)
 }
+}
+\references{
+\insertAllCited{}
 }
 \seealso{
 \link[tsrobprep]{model_missing_data},

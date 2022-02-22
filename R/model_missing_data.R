@@ -72,10 +72,14 @@
 #' tau != NULL the \link[tsrobprep]{robust_decompose} function is used together
 #' with the \link[quantreg]{rq.fit.fnb} function. The modelled values can be
 #' imputed using \link[tsrobprep]{impute_modelled_data} function.
+#' \insertNoCite{*}{tsrobprep}
 #' @return An object of class "tsrobprep" which contains the original data, the
 #' indices of the data that were modelled, the given quantile values, a list of
 #' sparse matrices with the modelled data to be imputed and a list of the
 #' numbers of models estimated for every variable.
+#' @references
+#' \insertAllCited{}
+#' @importFrom Rdpack reprompt
 #' @examples
 #' \dontrun{
 #' model.miss <- model_missing_data(
@@ -413,6 +417,7 @@ model_missing_data <- function(
             }
           } else df.orig <- cbind(df.orig, extreg.to.model)
           df.orig <- cbind(df.orig, X)
+          reg_num <- dim(df.orig)[2]
 
           # get the non-na observations
           act_ind <- !is.na(df.orig[,1])
@@ -450,6 +455,7 @@ model_missing_data <- function(
             }
           }
           df.orig <- df.orig[,bad.regressors]
+          lags_used <- lags.to.replace[c(TRUE, bad.regressors[(reg_num+1-lag_len):reg_num])]
           reg_num <- dim(df.orig)[2]
           # TODO better
           if(thr < 0.5) warning(paste0("The regression matrix consists of many NAs.",
@@ -576,10 +582,11 @@ model_missing_data <- function(
                 }
 
                 if(replace.recursively){
-                  if.in.df <- missing.index+lags.to.replace < dim(df.temp)[1] &
-                    missing.index+lags.to.replace > 0
-                  df.temp[cbind((missing.index+lags.to.replace)[if.in.df],
-                                c(1, (reg_num + 1 - lag_len):reg_num)[if.in.df])
+                  if.in.df <- missing.index+lags_used < dim(df.temp)[1] &
+                    missing.index+lags_used > 0
+                  df.temp[cbind((missing.index+lags_used)[if.in.df],
+                                c(1, (reg_num + 1 - length(lags_used)+1
+                                      ):reg_num)[if.in.df])
                   ] <- val[match(missing.index, missing.indices), i.run]
                 }
 
@@ -611,11 +618,11 @@ model_missing_data <- function(
             for(i.miss in seq_along(missing.indices)){
               missing.index <- missing.indices[i.miss]
               if(replace.recursively){
-                if.in.df <- missing.index+lags.to.replace < dim(df.new)[1] &
-                  missing.index+lags.to.replace > 0
-                df.orig.copy[cbind(
-                  (missing.index+lags.to.replace)[if.in.df],
-                  c(1, (reg_num + 1 - lag_len):reg_num)[if.in.df])
+                if.in.df <- missing.index+lags_used < dim(df.new)[1] &
+                  missing.index+lags_used > 0
+                df.orig.copy[cbind((missing.index+lags_used)[if.in.df],
+                                   c(1, (reg_num + 1 - length(lags_used)+1
+                                   ):reg_num)[if.in.df])
                 ] <- as.numeric(val)[i.miss]
               }
             }

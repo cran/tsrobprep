@@ -1,0 +1,17 @@
+citHeader("To cite tsrobprep in publications use:")
+
+
+citEntry(
+ entry="Article",
+ title= "tsrobprep — an R package for robust preprocessing of time series data",
+ journal="SoftwareX",
+ volume= "16",
+ pages="100809",
+ year="2021",
+ author = personList(as.person("Michał Narajewski"), 
+		as.person("Jens Kley-Holsteg"),
+		as.person("Florian Ziel")),
+ doi="10.1016/j.softx.2021.100809",
+ textVersion="Narajewski, M., Kley-Holsteg, J., & Ziel, F. (2021). tsrobprep — an R package for robust preprocessing of time series data, SoftwareX, 16, pp 100809.")
+
+

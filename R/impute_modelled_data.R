@@ -9,7 +9,10 @@
 #' be a subset of the quantile values present in the "tsrobprep" object. By
 #' default all quantiles present in the object are used.
 #' @return A matrix or a list of matrices with imputed missing values or
-#' outliers.
+#' outliers. \insertNoCite{*}{tsrobprep}
+#' @references
+#' \insertAllCited{}
+#' @importFrom Rdpack reprompt
 #' @examples
 #' \dontrun{
 #' model.miss <- model_missing_data(

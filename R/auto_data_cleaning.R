@@ -26,10 +26,13 @@
 #' the data from missing values, \link[tsrobprep]{detect_outliers} to detect
 #' outliers, removes them and finally applies again
 #' \link[tsrobprep]{model_missing_data} function. For details see the
-#' functions' respective help sections.
+#' functions' respective help sections. \insertNoCite{*}{tsrobprep}
 #' @return A list which contains a matrix or a list of matrices with imputed
 #' missing values or outliers, the indices of the data that were modelled, and
 #' the given quantile values.
+#' @references
+#' \insertAllCited{}
+#' @importFrom Rdpack reprompt
 #' @examples
 #' \dontrun{
 #' autoclean <- auto_data_cleaning(

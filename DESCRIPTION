@@ -1,7 +1,7 @@
 Package: tsrobprep
 Title: Robust Preprocessing of Time Series Data
-Version: 0.3.1
-Date: 2021-07-13
+Version: 0.3.2
+Date: 2022-02-21
 Authors@R: c(
     person(given = "Michał",
            family = "Narajewski",
@@ -23,19 +23,21 @@ Description: Methods for handling the missing values outliers are introduced in
     components and external regressors. The methods work robust and efficient,
     and they are fully tunable. The primary motivation for writing the package
     was preprocessing of the energy systems data, e.g. power plant production
-    time series, but the package could be used with any time series data.
+    time series, but the package could be used with any time series data. For 
+    details, see Narajewski et al. (2021) <doi:10.1016/j.softx.2021.100809>.
 Depends: R (>= 3.2.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: glmnet, MASS, Matrix, mclust, quantreg, splines, textTinyR,
-        zoo
+Imports: glmnet, MASS, Matrix, mclust, quantreg, Rdpack, splines,
+        textTinyR, zoo
+RdMacros: Rdpack
 LazyData: true
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-07-13 15:31:54 UTC; michal
+Packaged: 2022-02-22 10:00:34 UTC; michal
 Author: Michał Narajewski [aut, cre] (<https://orcid.org/0000-0002-3115-0162>),
   Jens Kley-Holsteg [aut],
   Florian Ziel [aut] (<https://orcid.org/0000-0002-2974-2660>)
 Maintainer: Michał Narajewski <michal.narajewski@uni-due.de>
 Repository: CRAN
-Date/Publication: 2021-07-13 16:50:01 UTC
+Date/Publication: 2022-02-22 10:30:01 UTC
